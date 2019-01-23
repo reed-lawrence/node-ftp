@@ -1,0 +1,26 @@
+{
+  "name": "ftp-app",
+  "version": "1.0.0",
+  "description": "Simple FTP node script",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/reed-lawrence/node-ftp.git"
+  },
+  "author": "Reed Lawrence",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/reed-lawrence/node-ftp/issues"
+  },
+  "homepage": "https://github.com/reed-lawrence/node-ftp#readme",
+  "dependencies": {
+    "@types/ftp": "^0.3.29",
+    "@types/glob": "^7.1.1",
+    "es6-promise": "^4.2.5",
+    "ftp": "^0.3.10",
+    "glob": "^7.1.3"
+  }
+}
