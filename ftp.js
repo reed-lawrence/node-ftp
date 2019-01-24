@@ -1,18 +1,25 @@
-import * as Client from 'ftp';
-import * as fs from 'fs';
-import * as glob from 'glob';
-import { Promise } from 'es6-promise';
-import { ftpcreds, ftptargets } from './ftpconfig';
+var Client = require('ftp');
+var fs = require('fs');
+var glob = require('glob');
+var ftpconfig = require('./ftpconfig');
+var exec = require('child_process').execSync;
 
-export class FTP {
-  directoryListing: string[] = [];
-  folders: string[] = [];
-  files: string[] = [];
-  expectedDns = ftpcreds.cert_dns;
 
-  async getDirectories(src: string): Promise<string[]> {
-    return new Promise<string[]>((resolve, reject) => {
-      glob(src + '/**/*', { dot: true }, (err, res) => {
+class FTP {
+  constructor() {
+    console.log(ftpconfig);
+    this.directoryListing = new Array();
+    this.folders = new Array();
+    this.files = new Array();
+    this.expectedDns = ftpconfig.ftpcreds.cert_dns;
+  }
+
+  getDirectories(src) {
+    console.log('get directories called');
+    return new Promise((resolve, reject) => {
+      glob(src + '/**/*', {
+        dot: true
+      }, (err, res) => {
         if (err) {
           reject(err);
         } else {
@@ -22,8 +29,9 @@ export class FTP {
     });
   }
 
-  async getAllFolders(directoryListing: string[]): Promise<boolean> {
-    return new Promise<boolean>((resolve, reject) => {
+  getAllFolders(directoryListing) {
+    console.log('getAllFolders called');
+    return new Promise((resolve, reject) => {
       directoryListing.forEach(item => {
         if (fs.statSync(item).isDirectory()) {
           this.folders.push(item);
@@ -33,18 +41,20 @@ export class FTP {
     });
   }
 
-  async getAllFiles(directoryListing: string[]): Promise<boolean> {
-    return new Promise<boolean>((resolve, reject) => {
+  getAllFiles(directoryListing) {
+    console.log('getAllFiles called');
+    return new Promise((resolve, reject) => {
       directoryListing.forEach(item => {
         if (fs.statSync(item).isFile()) {
           this.files.push(item);
         }
       });
+      resolve(true);
     });
   }
 
-  async getTargetSubdirectories(client: Client, targetDir: string): Promise<string[]> {
-    return new Promise<string[]>((resolve, reject) => {
+  getTargetSubdirectories(client, targetDir) {
+    return new Promise((resolve, reject) => {
       client.on('ready', () => {
         client.list(targetDir, (err, list) => {
           if (err) {
@@ -66,11 +76,11 @@ export class FTP {
     });
   }
 
-  async clearTargetDirectory(client: Client, targetDir: string): Promise<boolean> {
-    return new Promise<boolean>((resolve, reject) => {
+  clearTargetDirectory(client, targetDir) {
+    return new Promise((resolve, reject) => {
       this.getTargetSubdirectories(client, targetDir).then(
         folders => {
-          const promises: Promise<boolean>[] = [];
+          const promises = [];
           folders.forEach(folder => {
             promises.push(new Promise(r => {
               const targetDirname = targetDir + '/' + folder;
@@ -97,17 +107,19 @@ export class FTP {
     });
   }
 
-  async ftpExe(rootDirFrom: string, basetargetdir: string, folders: string[], files: string[]): Promise<number> {
-    return new Promise<number>((resolve, reject) => {
+  ftpExe(rootDirFrom, basetargetdir, folders, files) {
+    console.log('ftpExe called');
+    return new Promise((resolve, reject) => {
       const client = new Client();
+      console.log('client created');
       client.connect({
-        user: ftpcreds.user,
-        password: ftpcreds.pass,
+        user: ftpconfig.ftpcreds.user,
+        password: ftpconfig.ftpcreds.pass,
         secure: true,
-        host: ftpcreds.host,
-        port: ftpcreds.port,
+        host: ftpconfig.ftpcreds.host,
+        port: ftpconfig.ftpcreds.port,
         secureOptions: {
-          checkServerIdentity: (host, cert): Error => {
+          checkServerIdentity: (host, cert) => {
             if (cert.subjectaltname === this.expectedDns) {
               return undefined;
             } else {
@@ -120,8 +132,8 @@ export class FTP {
         cleared => {
           console.log('Cleared status: ' + cleared);
           const totaltransfers = folders.length + files.length;
-          const promises: Promise<boolean>[] = [];
-          
+          const promises = [];
+
           for (let i = 0; i < folders.length; i++) {
             promises.push(new Promise(r => {
               const destDirName = folders[i].replace(rootDirFrom, basetargetdir);
@@ -166,16 +178,19 @@ export class FTP {
     });
   }
 
-  async execute(src: string, destination: string): Promise<void> {
+  execute(src, destination) {
+    console.log('execute called');
     return new Promise((resolve, reject) => {
       this.getDirectories(src).then(
         files => {
+          console.log(files);
           this.directoryListing = files;
           // console.log(test.allfiles);
           this.getAllFolders(this.directoryListing).then(
             getAllFoldersDone => {
               this.getAllFiles(this.directoryListing).then(
                 getAllFilesDone => {
+                  console.log('getAllFiles done');
                   console.log(this.folders);
                   console.log(this.files);
                   this.ftpExe(src, destination, this.folders, this.files).then(
@@ -192,11 +207,17 @@ export class FTP {
       );
     });
   }
+  test(string){
+    console.log(string);
+  }
 }
 
-const ftp = new FTP();
-ftp.execute(ftptargets.from, ftptargets.destination);
+exec('powershell -c (New-Object Media.SoundPlayer "C:\Users\Reed\source\repos\node-ftp\alert.wav").PlaySync()');
+var ftp = new FTP();
+// ftp.execute('./output', '/test_ftp').then(
+//   resolve => {
+//     console.log('Done!');
+//   }
+// );
 
-
-
-
+// ""powershell -c (New-Object Media.SoundPlayer "C:\Windows\media\Windows Notify System Generic.wav").PlaySync()"";
